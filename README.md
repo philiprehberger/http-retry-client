@@ -157,13 +157,12 @@ $policy = RetryPolicy::builder()
 |---|---|---|
 | `attempts` | `int` | Total number of attempts made |
 
-## Testing
+## Development
 
 ```bash
 composer install
 vendor/bin/phpunit
 vendor/bin/pint --test
-vendor/bin/phpstan analyse
 ```
 
 ## License

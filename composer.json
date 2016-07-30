@@ -11,6 +11,7 @@
         "jitter",
         "psr-18"
     ],
+    "homepage": "https://github.com/philiprehberger/http-retry-client",
     "authors": [
         {
             "name": "Philip Rehberger"
@@ -36,6 +37,11 @@
         "psr-4": {
             "PhilipRehberger\\HttpRetry\\Tests\\": "tests/"
         }
+    },
+    "scripts": {
+        "test": "vendor/bin/phpunit",
+        "lint": "vendor/bin/pint",
+        "analyse": "vendor/bin/phpstan analyse"
     },
     "minimum-stability": "stable",
     "prefer-stable": true
