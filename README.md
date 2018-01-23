@@ -4,7 +4,7 @@
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/philiprehberger/http-retry-client.svg)](https://packagist.org/packages/philiprehberger/http-retry-client)
 [![License](https://img.shields.io/github/license/philiprehberger/http-retry-client)](LICENSE)
 
-HTTP client wrapper with automatic retries, exponential backoff, and jitter. Framework-agnostic with zero dependencies beyond PHP 8.2.
+HTTP client wrapper with automatic retries, exponential backoff, and jitter.
 
 ## Requirements
 
