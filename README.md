@@ -1,4 +1,4 @@
-# HTTP Retry Client
+# PHP HTTP Retry Client
 
 [![Tests](https://github.com/philiprehberger/http-retry-client/actions/workflows/tests.yml/badge.svg)](https://github.com/philiprehberger/http-retry-client/actions/workflows/tests.yml)
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/philiprehberger/http-retry-client.svg)](https://packagist.org/packages/philiprehberger/http-retry-client)
