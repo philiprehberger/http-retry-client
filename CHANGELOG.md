@@ -1,8 +1,13 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
+All notable changes to `http-retry-client` will be documented in this file.
 
 ## [Unreleased]
+
+## [1.0.3] - 2026-03-23
+
+### Fixed
+- Standardize CHANGELOG preamble to use package name
 
 ## [1.0.2] - 2026-03-17
 
