@@ -106,6 +106,49 @@ try {
 }
 ```
 
+### Jitter Modes
+
+Control the jitter algorithm used for backoff delays:
+
+```php
+use PhilipRehberger\HttpRetry\JitterMode;
+use PhilipRehberger\HttpRetry\RetryPolicy;
+
+// Full jitter (default): rand(0, delay)
+$policy = RetryPolicy::builder()
+    ->jitterMode(JitterMode::Full)
+    ->build();
+
+// Equal jitter: delay/2 + rand(0, delay/2)
+$policy = RetryPolicy::builder()
+    ->jitterMode(JitterMode::Equal)
+    ->build();
+
+// Decorrelated jitter: rand(base, previous * 3)
+$policy = RetryPolicy::builder()
+    ->jitterMode(JitterMode::Decorrelated)
+    ->build();
+```
+
+### Retry Hooks
+
+Register callbacks that run before and after each retry attempt:
+
+```php
+use PhilipRehberger\HttpRetry\RetryPolicy;
+
+$policy = RetryPolicy::builder()
+    ->beforeRetry(function (int $attempt, ?\Throwable $error): void {
+        echo "Retrying attempt {$attempt}...\n";
+    })
+    ->afterRetry(function (int $attempt, ?\Throwable $error): void {
+        if ($error !== null) {
+            echo "Attempt {$attempt} failed: {$error->getMessage()}\n";
+        }
+    })
+    ->build();
+```
+
 ### Custom Retryable Status Codes
 
 ```php
@@ -126,6 +169,9 @@ $policy = RetryPolicy::builder()
 | `multiplier` | `float` | `2.0` | Backoff multiplier |
 | `jitter` | `bool` | `true` | Whether to add random jitter |
 | `retryableStatusCodes` | `array<int>` | `[429, 500, 502, 503, 504]` | Status codes that trigger a retry |
+| `jitterMode` | `JitterMode` | `JitterMode::Full` | Jitter algorithm (`Full`, `Equal`, `Decorrelated`) |
+| `beforeRetry` | `?callable` | `null` | Callback invoked before each retry `(int $attempt, ?\Throwable $error)` |
+| `afterRetry` | `?callable` | `null` | Callback invoked after each retry `(int $attempt, ?\Throwable $error)` |
 
 ### `RetryClient`
 

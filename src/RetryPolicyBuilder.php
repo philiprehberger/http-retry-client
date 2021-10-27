@@ -19,6 +19,14 @@ final class RetryPolicyBuilder
     /** @var array<int> */
     private array $retryableStatusCodes = [429, 500, 502, 503, 504];
 
+    private JitterMode $jitterMode = JitterMode::Full;
+
+    /** @var ?callable */
+    private mixed $beforeRetry = null;
+
+    /** @var ?callable */
+    private mixed $afterRetry = null;
+
     public function maxRetries(int $maxRetries): self
     {
         $this->maxRetries = $maxRetries;
@@ -71,6 +79,37 @@ final class RetryPolicyBuilder
         return $this;
     }
 
+    public function jitterMode(JitterMode $mode): self
+    {
+        $this->jitterMode = $mode;
+
+        return $this;
+    }
+
+    /**
+     * Register a callback invoked before each retry attempt.
+     *
+     * @param  callable(int, ?\Throwable): void  $callback
+     */
+    public function beforeRetry(callable $callback): self
+    {
+        $this->beforeRetry = $callback;
+
+        return $this;
+    }
+
+    /**
+     * Register a callback invoked after each retry attempt.
+     *
+     * @param  callable(int, ?\Throwable): void  $callback
+     */
+    public function afterRetry(callable $callback): self
+    {
+        $this->afterRetry = $callback;
+
+        return $this;
+    }
+
     public function build(): RetryPolicy
     {
         return new RetryPolicy(
@@ -80,6 +119,9 @@ final class RetryPolicyBuilder
             multiplier: $this->multiplier,
             jitter: $this->jitter,
             retryableStatusCodes: $this->retryableStatusCodes,
+            jitterMode: $this->jitterMode,
+            beforeRetry: $this->beforeRetry,
+            afterRetry: $this->afterRetry,
         );
     }
 }
