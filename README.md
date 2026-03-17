@@ -1,8 +1,8 @@
 # HTTP Retry Client
 
 [![Tests](https://github.com/philiprehberger/http-retry-client/actions/workflows/tests.yml/badge.svg)](https://github.com/philiprehberger/http-retry-client/actions/workflows/tests.yml)
-[![Latest Version](https://img.shields.io/packagist/v/philiprehberger/http-retry-client.svg)](https://packagist.org/packages/philiprehberger/http-retry-client)
-[![License](https://img.shields.io/packagist/l/philiprehberger/http-retry-client.svg)](https://packagist.org/packages/philiprehberger/http-retry-client)
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/philiprehberger/http-retry-client.svg)](https://packagist.org/packages/philiprehberger/http-retry-client)
+[![License](https://img.shields.io/github/license/philiprehberger/http-retry-client)](LICENSE)
 
 HTTP client wrapper with automatic retries, exponential backoff, and jitter. Framework-agnostic with zero dependencies beyond PHP 8.2.
 
@@ -163,6 +163,7 @@ $policy = RetryPolicy::builder()
 composer install
 vendor/bin/phpunit
 vendor/bin/pint --test
+vendor/bin/phpstan analyse
 ```
 
 ## License
