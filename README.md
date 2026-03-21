@@ -8,7 +8,7 @@ HTTP client wrapper with automatic retries, exponential backoff, and jitter.
 
 ## Requirements
 
-- PHP ^8.2
+- PHP 8.2+
 
 ## Installation
 
