@@ -29,10 +29,18 @@ final class RetryClient
             $attempts++;
 
             try {
+                if ($attempt > 0) {
+                    $this->policy->invokeBeforeRetry($attempt, null);
+                }
+
                 $response = $this->executor->execute($request);
                 $lastResponse = $response;
 
                 if (! $this->policy->isRetryable($response->statusCode)) {
+                    if ($attempt > 0) {
+                        $this->policy->invokeAfterRetry($attempt, null);
+                    }
+
                     return new RetryResult(
                         statusCode: $response->statusCode,
                         body: $response->body,
@@ -43,6 +51,10 @@ final class RetryClient
                     );
                 }
 
+                if ($attempt > 0) {
+                    $this->policy->invokeAfterRetry($attempt, null);
+                }
+
                 // Check for Retry-After header on 429
                 $delay = $this->getDelay($response, $attempt);
                 $totalDelay += $delay;
@@ -50,6 +62,10 @@ final class RetryClient
             } catch (MaxRetriesExceededException $e) {
                 throw $e;
             } catch (\Throwable $e) {
+                if ($attempt > 0) {
+                    $this->policy->invokeAfterRetry($attempt, $e);
+                }
+
                 if ($attempt >= $this->policy->maxRetries) {
                     throw new MaxRetriesExceededException(
                         "Max retries ({$this->policy->maxRetries}) exceeded.",

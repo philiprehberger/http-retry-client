@@ -7,6 +7,7 @@ namespace PhilipRehberger\HttpRetry\Tests;
 use PhilipRehberger\HttpRetry\Exceptions\MaxRetriesExceededException;
 use PhilipRehberger\HttpRetry\HttpRequest;
 use PhilipRehberger\HttpRetry\HttpResponse;
+use PhilipRehberger\HttpRetry\JitterMode;
 use PhilipRehberger\HttpRetry\RetryClient;
 use PhilipRehberger\HttpRetry\RetryPolicy;
 use PhilipRehberger\HttpRetry\Tests\Stubs\MockExecutor;
@@ -214,5 +215,185 @@ final class RetryClientTest extends TestCase
         $this->assertSame(3.0, $policy->multiplier);
         $this->assertFalse($policy->jitter);
         $this->assertSame([500, 502], $policy->retryableStatusCodes);
+    }
+
+    public function test_full_jitter_mode_returns_delay_within_range(): void
+    {
+        $policy = new RetryPolicy(
+            baseDelayMs: 100,
+            maxDelayMs: 10000,
+            multiplier: 2.0,
+            jitter: true,
+            jitterMode: JitterMode::Full,
+        );
+
+        for ($i = 0; $i < 50; $i++) {
+            $delay = $policy->calculateDelay(0);
+            $this->assertGreaterThanOrEqual(0, $delay);
+            $this->assertLessThanOrEqual(100, $delay);
+        }
+    }
+
+    public function test_equal_jitter_mode_returns_delay_within_range(): void
+    {
+        $policy = new RetryPolicy(
+            baseDelayMs: 100,
+            maxDelayMs: 10000,
+            multiplier: 2.0,
+            jitter: true,
+            jitterMode: JitterMode::Equal,
+        );
+
+        for ($i = 0; $i < 50; $i++) {
+            $delay = $policy->calculateDelay(0);
+            // Equal jitter: delay/2 + rand(0, delay/2) => [50, 100]
+            $this->assertGreaterThanOrEqual(50, $delay);
+            $this->assertLessThanOrEqual(100, $delay);
+        }
+    }
+
+    public function test_decorrelated_jitter_mode_returns_delay_within_bounds(): void
+    {
+        $policy = new RetryPolicy(
+            baseDelayMs: 100,
+            maxDelayMs: 10000,
+            multiplier: 2.0,
+            jitter: true,
+            jitterMode: JitterMode::Decorrelated,
+        );
+
+        for ($i = 0; $i < 50; $i++) {
+            $delay = $policy->calculateDelay(0);
+            $this->assertGreaterThanOrEqual(100, $delay);
+            $this->assertLessThanOrEqual(10000, $delay);
+        }
+    }
+
+    public function test_jitter_mode_builder(): void
+    {
+        $policy = RetryPolicy::builder()
+            ->jitterMode(JitterMode::Equal)
+            ->build();
+
+        $this->assertSame(JitterMode::Equal, $policy->jitterMode);
+    }
+
+    public function test_before_retry_callback_is_invoked(): void
+    {
+        $log = [];
+
+        $policy = RetryPolicy::builder()
+            ->maxRetries(3)
+            ->baseDelay(1)
+            ->maxDelay(10)
+            ->withoutJitter()
+            ->beforeRetry(function (int $attempt, ?\Throwable $error) use (&$log): void {
+                $log[] = ['before', $attempt, $error];
+            })
+            ->build();
+
+        $executor = new MockExecutor([
+            new HttpResponse(500, 'error'),
+            new HttpResponse(200, 'ok'),
+        ]);
+
+        $client = new RetryClient($executor, $policy);
+        $result = $client->send($this->makeRequest());
+
+        $this->assertSame(200, $result->statusCode);
+        $this->assertCount(1, $log);
+        $this->assertSame('before', $log[0][0]);
+        $this->assertSame(1, $log[0][1]);
+        $this->assertNull($log[0][2]);
+    }
+
+    public function test_after_retry_callback_is_invoked(): void
+    {
+        $log = [];
+
+        $policy = RetryPolicy::builder()
+            ->maxRetries(3)
+            ->baseDelay(1)
+            ->maxDelay(10)
+            ->withoutJitter()
+            ->afterRetry(function (int $attempt, ?\Throwable $error) use (&$log): void {
+                $log[] = ['after', $attempt, $error];
+            })
+            ->build();
+
+        $executor = new MockExecutor([
+            new HttpResponse(500, 'error'),
+            new HttpResponse(200, 'ok'),
+        ]);
+
+        $client = new RetryClient($executor, $policy);
+        $result = $client->send($this->makeRequest());
+
+        $this->assertSame(200, $result->statusCode);
+        $this->assertCount(1, $log);
+        $this->assertSame('after', $log[0][0]);
+        $this->assertSame(1, $log[0][1]);
+        $this->assertNull($log[0][2]);
+    }
+
+    public function test_before_and_after_retry_callbacks_with_exception(): void
+    {
+        $log = [];
+
+        $policy = RetryPolicy::builder()
+            ->maxRetries(3)
+            ->baseDelay(1)
+            ->maxDelay(10)
+            ->withoutJitter()
+            ->beforeRetry(function (int $attempt, ?\Throwable $error) use (&$log): void {
+                $log[] = ['before', $attempt];
+            })
+            ->afterRetry(function (int $attempt, ?\Throwable $error) use (&$log): void {
+                $log[] = ['after', $attempt, $error instanceof \Throwable];
+            })
+            ->build();
+
+        $executor = new MockExecutor([
+            new \RuntimeException('connection failed'),
+            new HttpResponse(200, 'ok'),
+        ]);
+
+        $client = new RetryClient($executor, $policy);
+        $result = $client->send($this->makeRequest());
+
+        $this->assertSame(200, $result->statusCode);
+        $this->assertCount(2, $log);
+        // Before retry attempt 1
+        $this->assertSame(['before', 1], $log[0]);
+        // After retry attempt 1 (success path)
+        $this->assertSame(['after', 1, false], $log[1]);
+    }
+
+    public function test_callbacks_not_invoked_on_first_attempt(): void
+    {
+        $log = [];
+
+        $policy = RetryPolicy::builder()
+            ->maxRetries(3)
+            ->baseDelay(1)
+            ->maxDelay(10)
+            ->withoutJitter()
+            ->beforeRetry(function (int $attempt, ?\Throwable $error) use (&$log): void {
+                $log[] = 'before';
+            })
+            ->afterRetry(function (int $attempt, ?\Throwable $error) use (&$log): void {
+                $log[] = 'after';
+            })
+            ->build();
+
+        $executor = new MockExecutor([
+            new HttpResponse(200, 'ok'),
+        ]);
+
+        $client = new RetryClient($executor, $policy);
+        $result = $client->send($this->makeRequest());
+
+        $this->assertSame(200, $result->statusCode);
+        $this->assertEmpty($log);
     }
 }

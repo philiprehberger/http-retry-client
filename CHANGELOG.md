@@ -4,6 +4,19 @@ All notable changes to `http-retry-client` will be documented in this file.
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-03-22
+
+### Added
+- `JitterMode` backed string enum with `Full`, `Equal`, and `Decorrelated` modes
+- `jitterMode(JitterMode $mode)` method on `RetryPolicyBuilder`
+- `beforeRetry(callable $callback)` hook on `RetryPolicyBuilder`
+- `afterRetry(callable $callback)` hook on `RetryPolicyBuilder`
+- Jitter mode integration into delay calculation with per-mode algorithms
+- Retry hooks are invoked during the retry loop with attempt number and error context
+
+### Changed
+- `RetryPolicy::calculateDelay()` now applies jitter based on the configured `JitterMode` (default: `Full`)
+
 ## [1.0.3] - 2026-03-23
 
 ### Fixed
