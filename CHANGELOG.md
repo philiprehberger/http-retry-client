@@ -4,6 +4,17 @@ All notable changes to `http-retry-client` will be documented in this file.
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-04-01
+
+### Added
+- Circuit breaker integration via `CircuitBreakerWrapper` with closed/open/half-open states
+- `withCircuitBreaker()` method on `RetryPolicyBuilder` for fluent configuration
+- `CircuitBreakerOpenException` thrown when circuit is open and requests are rejected
+- Request/response logging via `RequestLogger` with configurable body logging
+- `withLogger()` method on `RetryPolicyBuilder` for fluent configuration
+- Timeout configuration via `connectionTimeout()` and `requestTimeout()` on `RetryPolicyBuilder`
+- `connectionTimeoutMs` and `requestTimeoutMs` properties on `RetryPolicy` and `HttpRequest`
+
 ## [1.1.1] - 2026-03-31
 
 ### Changed

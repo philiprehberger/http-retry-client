@@ -27,6 +27,17 @@ final class RetryPolicyBuilder
     /** @var ?callable */
     private mixed $afterRetry = null;
 
+    private ?int $connectionTimeoutMs = null;
+
+    private ?int $requestTimeoutMs = null;
+
+    private ?CircuitBreakerWrapper $circuitBreaker = null;
+
+    private ?RequestLogger $requestLogger = null;
+
+    /**
+     * Set the maximum number of retry attempts.
+     */
     public function maxRetries(int $maxRetries): self
     {
         $this->maxRetries = $maxRetries;
@@ -34,6 +45,9 @@ final class RetryPolicyBuilder
         return $this;
     }
 
+    /**
+     * Set the base delay in milliseconds.
+     */
     public function baseDelay(int $ms): self
     {
         $this->baseDelayMs = $ms;
@@ -41,6 +55,9 @@ final class RetryPolicyBuilder
         return $this;
     }
 
+    /**
+     * Set the maximum delay cap in milliseconds.
+     */
     public function maxDelay(int $ms): self
     {
         $this->maxDelayMs = $ms;
@@ -48,6 +65,9 @@ final class RetryPolicyBuilder
         return $this;
     }
 
+    /**
+     * Set the backoff multiplier.
+     */
     public function multiplier(float $multiplier): self
     {
         $this->multiplier = $multiplier;
@@ -55,6 +75,9 @@ final class RetryPolicyBuilder
         return $this;
     }
 
+    /**
+     * Enable or disable jitter for backoff delays.
+     */
     public function withJitter(bool $jitter = true): self
     {
         $this->jitter = $jitter;
@@ -62,6 +85,9 @@ final class RetryPolicyBuilder
         return $this;
     }
 
+    /**
+     * Disable jitter for backoff delays.
+     */
     public function withoutJitter(): self
     {
         $this->jitter = false;
@@ -70,6 +96,8 @@ final class RetryPolicyBuilder
     }
 
     /**
+     * Set the HTTP status codes that trigger a retry.
+     *
      * @param  array<int>  $codes
      */
     public function retryOn(array $codes): self
@@ -79,6 +107,9 @@ final class RetryPolicyBuilder
         return $this;
     }
 
+    /**
+     * Set the jitter algorithm to use.
+     */
     public function jitterMode(JitterMode $mode): self
     {
         $this->jitterMode = $mode;
@@ -110,6 +141,55 @@ final class RetryPolicyBuilder
         return $this;
     }
 
+    /**
+     * Set the connection timeout in milliseconds.
+     */
+    public function connectionTimeout(int $ms): self
+    {
+        $this->connectionTimeoutMs = $ms;
+
+        return $this;
+    }
+
+    /**
+     * Set the request timeout in milliseconds.
+     */
+    public function requestTimeout(int $ms): self
+    {
+        $this->requestTimeoutMs = $ms;
+
+        return $this;
+    }
+
+    /**
+     * Enable circuit breaker protection.
+     *
+     * @param  int  $failureThreshold  Number of consecutive failures before opening the circuit
+     * @param  int  $recoveryTimeout  Seconds to wait before attempting recovery
+     */
+    public function withCircuitBreaker(int $failureThreshold = 5, int $recoveryTimeout = 30): self
+    {
+        $this->circuitBreaker = new CircuitBreakerWrapper($failureThreshold, $recoveryTimeout);
+
+        return $this;
+    }
+
+    /**
+     * Enable request/response logging.
+     *
+     * @param  callable(array<string, mixed>): void  $logger  Callback that receives log entry arrays
+     * @param  bool  $logBodies  Whether to include request/response bodies in log entries
+     */
+    public function withLogger(callable $logger, bool $logBodies = false): self
+    {
+        $this->requestLogger = new RequestLogger($logger, $logBodies);
+
+        return $this;
+    }
+
+    /**
+     * Build the retry policy.
+     */
     public function build(): RetryPolicy
     {
         return new RetryPolicy(
@@ -122,6 +202,24 @@ final class RetryPolicyBuilder
             jitterMode: $this->jitterMode,
             beforeRetry: $this->beforeRetry,
             afterRetry: $this->afterRetry,
+            connectionTimeoutMs: $this->connectionTimeoutMs,
+            requestTimeoutMs: $this->requestTimeoutMs,
         );
+    }
+
+    /**
+     * Get the configured circuit breaker, if any.
+     */
+    public function getCircuitBreaker(): ?CircuitBreakerWrapper
+    {
+        return $this->circuitBreaker;
+    }
+
+    /**
+     * Get the configured request logger, if any.
+     */
+    public function getRequestLogger(): ?RequestLogger
+    {
+        return $this->requestLogger;
     }
 }

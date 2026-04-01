@@ -18,6 +18,8 @@ final class RetryPolicy
      * @param  JitterMode  $jitterMode  Jitter algorithm to use
      * @param  ?callable  $beforeRetry  Callback invoked before each retry attempt
      * @param  ?callable  $afterRetry  Callback invoked after each retry attempt
+     * @param  ?int  $connectionTimeoutMs  Default connection timeout in milliseconds
+     * @param  ?int  $requestTimeoutMs  Default request timeout in milliseconds
      */
     public function __construct(
         public readonly int $maxRetries = 3,
@@ -31,6 +33,8 @@ final class RetryPolicy
         private readonly mixed $beforeRetry = null,
         /** @var ?callable */
         private readonly mixed $afterRetry = null,
+        public readonly ?int $connectionTimeoutMs = null,
+        public readonly ?int $requestTimeoutMs = null,
     ) {}
 
     /**
